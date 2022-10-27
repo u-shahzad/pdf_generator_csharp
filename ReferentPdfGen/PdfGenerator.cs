@@ -7,6 +7,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 using System.Runtime.Remoting.Messaging;
+using static System.Net.Mime.MediaTypeNames;
+using Image = iTextSharp.text.Image;
 
 namespace ReferentPdfGen
 {
@@ -25,7 +27,7 @@ namespace ReferentPdfGen
             BOTTOM_MARGIN = bOTTOM_MARGIN;
         }
 
-        public string CreatePdf(string path, CustomerForSalesCare cfsc, DateTime timestamp, string titCareId) 
+        public string CreatePdf(string path, CustomerForSalesCare cfsc, DateTime timestamp, string titCareId, string vodafoneLogo, string filigranaPath) 
         {
             var filename = $"salescare_otpvalidation_{titCareId}_{timestamp.ToString("dd_MM_yyyy_hhmmss")}.pdf";
             path = Path.Combine(path, filename);
@@ -47,22 +49,22 @@ namespace ReferentPdfGen
                     writer.StrictImageSequence = true;
                     writer.SetLinearPageMode();
 
-                    // Filigrana e Logo
-                    //var logo = Image.GetInstance(BlendEnvironment.MapPathAsRelative("/uploads/files/LogoVodafone.png"));
-                    //var filigrana = Image.GetInstance(BlendEnvironment.MapPathAsRelative("/uploads/files/filigrana.png"));
-                    //logo.ScalePercent(33f);
-                    //filigrana.SetAbsolutePosition(0, 0);
-                    //logo.SetAbsolutePosition((PageSize.A4.Width - 100f), 20f);
-                    //var e = new ConclusivePdfPageEventHandler()
-                    //{
-                    //    logo = logo,
-                    //    filigrana = filigrana,
-                    //    testo = documentId,
-                    //    font = fHeader
-                    //};
-                    //writer.PageEvent = e;
-
                     document.Open();
+
+                    // Filigrana e Logo
+                    var logo = Image.GetInstance(vodafoneLogo);
+                    logo.SetAbsolutePosition(0, 0);
+                    logo.ScalePercent(33f);
+                    logo.SetAbsolutePosition((PageSize.A4.Width - 100f), 20f);
+                    var filigrana = Image.GetInstance(filigranaPath);
+                    filigrana.SetAbsolutePosition(0, 0);
+
+                    var under = writer.DirectContentUnder;
+                    under.SaveState();
+                    under.AddImage(logo);
+                    under.AddImage(filigrana);
+
+                    under.RestoreState();
 
                     if (!string.IsNullOrWhiteSpace(titCareId))
                     {
@@ -105,7 +107,7 @@ namespace ReferentPdfGen
                     document.Add(new Paragraph(" "));
                     var par6 = new Paragraph();
                     par6.Add(new Chunk("Data validazione OTP: ", fontBold));
-                    par6.Add(new Chunk(timestamp.ToString("dd/MM/yyyy"), fontNormal));
+                    par6.Add(new Chunk(timestamp.ToString("dd/MM/yyyy HH:mm:ss"), fontNormal));
                     document.Add(new Paragraph(par6));
                     document.Add(new Paragraph(" "));
                 }
